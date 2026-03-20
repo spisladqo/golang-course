@@ -7,23 +7,50 @@ import (
 	"time"
 )
 
+const reposUrl = "https://api.github.com/repos/"
+
 type Repository struct {
 	Owner struct {
 		Login string `json:"login"`
 	} `json:"owner"`
-	Name       string `json:"name"`
-	Id         int    `json:"id"`
-	StarsCount int    `json:"stargazers_count"`
-	ForksCount int    `json:"forks_count"`
+	Parent struct {
+		FullName string `json:"full_name"`
+	} `json:"parent"`
+	Name            string `json:"name"`
+	Id              int    `json:"id"`
+	StarsCount      int    `json:"stargazers_count"`
+	ForksCount      int    `json:"forks_count"`
+	CreatedAt       string `json:"created_at"`
+	IsFork          bool   `json:"fork"`
+	OpenIssuesCount int    `json:"open_issues_count"`
 }
 
-func main() {
-	url := "https://api.github.com/repos/spisladqo/golang-course"
+func printRepoStats(repo Repository) {
+	isForkYN := ""
+	if repo.IsFork {
+		isForkYN = "yes"
+	} else {
+		isForkYN = "no"
+	}
+	fmt.Println("=Repository statistics=")
+	fmt.Println("Name:        ", repo.Name)
+	fmt.Println("Owner login: ", repo.Owner.Login)
+	fmt.Println("Stars count: ", repo.StarsCount)
+	fmt.Println("Forks count: ", repo.ForksCount)
+	fmt.Println("Created at:  ", repo.CreatedAt)
+	fmt.Println("Is a fork:   ", isForkYN)
+	if repo.IsFork {
+		fmt.Println("Forked from: ", repo.Parent.FullName)
+	}
+	fmt.Println("Open issues: ", repo.OpenIssuesCount)
+}
+
+func sendRequest(ownerLogin, repoName string) (*http.Response, error) {
+	url := reposUrl + ownerLogin + "/" + repoName
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return nil, err
 	}
 
 	req.Header.Set("Accept", "application/vnd.github+json")
@@ -31,27 +58,47 @@ func main() {
 
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("unexpected status: got %v\n", resp.Status)
-		return
-	}
+	return resp, err
+}
 
-	var repo Repository
-	err = json.NewDecoder(resp.Body).Decode(&repo)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+func runLoop() {
+	for {
+		var ownerLogin string
+		var repoName string
 
-	fmt.Println("repo name:   ", repo.Name)
-	fmt.Println("repo id:     ", repo.Id)
-	fmt.Println("owner login: ", repo.Owner.Login)
-	fmt.Println("stars count: ", repo.StarsCount)
-	fmt.Println("forks count: ", repo.ForksCount)
+		fmt.Print("Enter repository owner login: ")
+		fmt.Scanln(&ownerLogin)
+		fmt.Print("Enter repository name: ")
+		fmt.Scanln(&repoName)
+		fmt.Println()
+
+		resp, err := sendRequest(ownerLogin, repoName)
+		if err != nil {
+			fmt.Println("Error: ", err)
+			fmt.Println("Try again")
+			fmt.Println()
+			continue
+		} else if resp.StatusCode != http.StatusOK {
+			fmt.Println("Http error: ", resp.Status)
+			fmt.Println("Try again")
+			fmt.Println()
+			continue
+		}
+
+		var repo Repository
+		err = json.NewDecoder(resp.Body).Decode(&repo)
+		if err != nil {
+			fmt.Println("Error when marshalling:", err)
+			continue
+		}
+		resp.Body.Close()
+
+		printRepoStats(repo)
+		fmt.Println()
+	}
+}
+
+func main() {
+	runLoop()
 }
