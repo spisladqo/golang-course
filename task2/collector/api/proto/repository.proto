@@ -1,0 +1,27 @@
+syntax = "proto3";
+package v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/spisladqo/golang-course/task2/collector/api/proto";
+
+service RepositoryService {
+    rpc getRepository(GetRepositoryRequest) returns (GetRepositoryReply);
+}
+
+message GetRepositoryRequest {
+    string repo_name = 1;
+    string owner_name = 2;
+}
+
+message GetRepositoryReply {
+    string repo_name = 1;
+    string owner_name = 2;
+    int32 id = 3;
+    int32 stars_count = 4;
+    int32 forks_count = 5;
+    google.protobuf.Timestamp created_at = 6;
+    bool is_fork = 7;
+    optional string forked_from = 8;
+    int32 open_issues = 9;
+}
