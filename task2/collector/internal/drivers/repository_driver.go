@@ -50,11 +50,11 @@ func (rd *RepositoryDriver) GetRepository(authorLogin, repoName string) (*domain
 		resp.Body.Close()
 	}()
 
-	var repo *domain.Repository
-	err = json.NewDecoder(resp.Body).Decode(repo)
+	var repo domain.Repository
+	err = json.NewDecoder(resp.Body).Decode(&repo)
 	if err != nil {
 		return &domain.Repository{}, err
 	}
 
-	return repo, nil
+	return &repo, nil
 }

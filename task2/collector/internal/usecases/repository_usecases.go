@@ -59,7 +59,7 @@ func (ru *RepositoryUsecases) IsValidGitHubUsername(name string) error {
 	return nil
 }
 
-func (ru *RepositoryUsecases) getRepository(authorName, repoName string) (*domain.Repository, error) {
+func (ru *RepositoryUsecases) GetRepository(authorName, repoName string) (*domain.Repository, error) {
 	err := ru.isValidGithubRepoName(repoName)
 	if err != nil {
 		return &domain.Repository{}, fmt.Errorf("repository name invalid: %s", err)
@@ -67,7 +67,7 @@ func (ru *RepositoryUsecases) getRepository(authorName, repoName string) (*domai
 
 	err = ru.IsValidGitHubUsername(authorName)
 	if err != nil {
-		return &domain.Repository{}, fmt.Errorf("user name invalid: %s", err)
+		return &domain.Repository{}, fmt.Errorf("user name invalid %s", err)
 	}
 
 	return ru.repositoryDriver.GetRepository(authorName, repoName)
